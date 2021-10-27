@@ -88,7 +88,6 @@ def main():
     for post in posts:
         changes_mades, updated_post = linkify.fix_post_links(post)
         if changes_mades:
-            breakpoint()
             updated_posts.append(updated_post)
     warnings.resetwarnings()
 
