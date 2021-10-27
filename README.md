@@ -20,7 +20,7 @@ pip install -r requirements.txt
 cp sample.env .env
 ```
 
-Replace `.env` value with your own database values.
+Replace `.env` values with your own database values.
 
 ## To run
 
