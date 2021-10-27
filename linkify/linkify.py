@@ -2,6 +2,7 @@ import logging
 import re
 import sys
 from typing import Tuple
+import warnings
 
 import bs4
 
@@ -29,43 +30,48 @@ INTELLITECT_LINK_PATTERN = re.compile(r"http[s]?:\/\/intellitect\.com")
 
 
 class Linkify:
-    def fix_post_links(self, post: Post) -> Post:
-        updated_post_content = self.fix(post.post_content)
-        updated_post_content_filtered = self.fix(post.post_content_filtered)
+    def fix_post_links(self, post: Post) -> Tuple[bool, Post]:
+        post_content_changes, updated_post_content = self.fix(post.post_content, post.post_id)
+        post_content_filtered_changed, updated_post_content_filtered = self.fix(post.post_content_filtered, post.post_id)
         post = Post(
             post.post_id,
             post.post_type,
             updated_post_content,
             updated_post_content_filtered,
         )
-        return post
+        changes_made = post_content_changes or post_content_filtered_changed
+        return changes_made, post
 
     @classmethod
-    def fix(cls, content: str) -> str:
+    def fix(cls, content: str, post_id: str) -> Tuple[bool, str]:
         soup = bs4.BeautifulSoup(content, "html.parser")
+        changes_made = False
 
         for link in soup.find_all("a"):
             href = link.get("href")
             if href is not None:
-                replaced, relative_href = cls.fix_link(href)
+                replaced, relative_href = cls.fix_link(href, post_id)
+                changes_made = changes_made or replaced
                 if replaced:
                     link["href"] = relative_href
 
         for img in soup.find_all("img"):
             src = img.get("src")
             if src is not None:
-                replaced, relative_src = cls.fix_link(src)
+                replaced, relative_src = cls.fix_link(src, post_id)
+                changes_made = changes_made or replaced
                 if replaced:
                     img["src"] = relative_src
 
         updated_content = soup.decode(pretty_print=False, formatter="html")
-        return updated_content
+        return changes_made, updated_content
 
     @staticmethod
-    def fix_link(link: str) -> Tuple[bool, str]:
+    def fix_link(link: str, post_id: str) -> Tuple[bool, str]:
         if INTELLITECT_LINK_PATTERN.match(link):
-            relative_href = re.sub(INTELLITECT_LINK_PATTERN, "", link)
-            return True, relative_href
+            relative_link = re.sub(INTELLITECT_LINK_PATTERN, "", link)
+            logger.info(f"post_id={post_id} replacing: {link} -> {relative_link}")
+            return True, relative_link
         return False, link
 
 
@@ -76,12 +82,15 @@ def main():
     with DbContext() as db_context:
         posts = db_context.query_posts()
 
+    warnings.filterwarnings("ignore", category=bs4.MarkupResemblesLocatorWarning)
     linkify = Linkify()
     updated_posts: list[Post] = []
     for post in posts:
-        updated_post = linkify.fix_post_links(post)
-        if updated_post != post:
+        changes_mades, updated_post = linkify.fix_post_links(post)
+        if changes_mades:
+            breakpoint()
             updated_posts.append(updated_post)
+    warnings.resetwarnings()
 
     with DbContext() as db_context:
         for post in updated_posts:

@@ -21,10 +21,9 @@ class DbContext:
         query = (
             "SELECT ID, post_type, post_content, post_content_filtered "
             "FROM wp_posts "
-            "WHERE post_title = %s "
             "ORDER BY ID "
         )
-        self.connection.cursor.execute(query, ("Demystifying the SDET Unicorn",))
+        self.connection.cursor.execute(query)
         posts: list[Post] = [
             Post(*post)
             for post
