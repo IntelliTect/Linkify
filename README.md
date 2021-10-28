@@ -1,4 +1,5 @@
 # Linkify
+![](https://github.com/IntelliTect/Linkify/actions/workflows/main.yml/badge.svg)
 
 ## Setup dev environment
 
