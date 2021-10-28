@@ -2,4 +2,5 @@
 .vscode/
 env/
 .env
-logs/
+logs/**
+!logs/.keep
