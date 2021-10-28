@@ -6,7 +6,8 @@ from linkify.posts import Post
 
 def test__linkify__fix_a_href():
     link = "https://intellitect.com/demystifying-requirements-gathering/"
-    replaced, actual = Linkify.fix_link(link, "post_id")
+    empty_post = Post("", "", "", "")
+    replaced, actual = Linkify(empty_post).fix_link(link)
     expected = "/demystifying-requirements-gathering/"
     assert replaced is True
     assert actual == expected
@@ -26,7 +27,7 @@ def test__linkify__fix_post_links():
         "",
     )
 
-    changes_made, actual_post = Linkify().fix_post_links(post)
+    changes_made, actual_post = Linkify(post).fix_post_links()
     actual = bs4.BeautifulSoup(actual_post.post_content, "html.parser")
 
     expected = bs4.BeautifulSoup(
@@ -58,7 +59,7 @@ def test__linkify__fix_post_links__one_char_different():
         "",
     )
 
-    changes_made, actual_post = Linkify().fix_post_links(post)
+    changes_made, actual_post = Linkify(post).fix_post_links()
     actual = bs4.BeautifulSoup(actual_post.post_content, "html.parser")
 
     expected = bs4.BeautifulSoup(

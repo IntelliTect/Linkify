@@ -31,27 +31,31 @@ RE_LINK_PATTERN = re.compile(LINK_PATTERN)
 
 
 class Linkify:
-    def fix_post_links(self, post: Post) -> Tuple[bool, Post]:
-        post_content_changes, updated_post_content = self.fix(post.post_content, post.post_id)
-        post_content_filtered_changed, updated_post_content_filtered = self.fix(post.post_content_filtered, post.post_id)
-        post = Post(
+
+    def __init__(self, post: Post):
+        self.post = post
+
+    def fix_post_links(self) -> Tuple[bool, Post]:
+        post = self.post
+        post_content_changes, updated_post_content = self.fix(post.post_content)
+        post_content_filtered_changed, updated_post_content_filtered = self.fix(post.post_content_filtered)
+        updated_post = Post(
             post.post_id,
             post.post_type,
             updated_post_content,
             updated_post_content_filtered,
         )
         changes_made = post_content_changes or post_content_filtered_changed
-        return changes_made, post
+        return changes_made, updated_post
 
-    @classmethod
-    def fix(cls, content: str, post_id: str) -> Tuple[bool, str]:
+    def fix(self, content: str) -> Tuple[bool, str]:
         soup = bs4.BeautifulSoup(content, "html.parser")
         changes_made = False
 
         for link in soup.find_all("a"):
             href = link.get("href")
             if href is not None:
-                replaced, relative_href = cls.fix_link(href, post_id)
+                replaced, relative_href = self.fix_link(href)
                 changes_made = changes_made or replaced
                 if replaced:
                     link["href"] = relative_href
@@ -59,7 +63,7 @@ class Linkify:
         for img in soup.find_all("img"):
             src = img.get("src")
             if src is not None:
-                replaced, relative_src = cls.fix_link(src, post_id)
+                replaced, relative_src = self.fix_link(src)
                 changes_made = changes_made or replaced
                 if replaced:
                     img["src"] = relative_src
@@ -67,11 +71,10 @@ class Linkify:
         updated_content = soup.decode(pretty_print=False, formatter="html")
         return changes_made, updated_content
 
-    @staticmethod
-    def fix_link(link: str, post_id: str) -> Tuple[bool, str]:
+    def fix_link(self, link: str) -> Tuple[bool, str]:
         if RE_LINK_PATTERN.match(link):
             relative_link = re.sub(RE_LINK_PATTERN, "", link)
-            logger.info(f"post_id={post_id} replacing: {link} -> {relative_link}")
+            logger.info(f"post_id={self.post.post_id} replacing: {link} -> {relative_link}")
             return True, relative_link
         return False, link
 
@@ -84,10 +87,10 @@ def main():
         posts = db_context.query_posts()
 
     warnings.filterwarnings("ignore", category=bs4.MarkupResemblesLocatorWarning)
-    linkify = Linkify()
     updated_posts: list[Post] = []
     for post in posts:
-        changes_mades, updated_post = linkify.fix_post_links(post)
+        linkify = Linkify(post)
+        changes_mades, updated_post = linkify.fix_post_links()
         if changes_mades:
             updated_posts.append(updated_post)
     warnings.resetwarnings()
