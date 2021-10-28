@@ -28,3 +28,9 @@ Replace `.env` values with your own database values.
 ```
 python -m linkify
 ```
+Module will perform a dry-run by default (not make any changes). To commit changes to the database, run with `--commit`.
+```
+python -m linkify --commit
+```
+
+Logs are output to `/logs`.
