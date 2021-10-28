@@ -7,6 +7,7 @@ import warnings
 import bs4
 
 from .db_context import DbContext
+from .env import LINK_PATTERN
 from .posts import Post
 
 
@@ -26,7 +27,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stdout_handler)
 
 
-INTELLITECT_LINK_PATTERN = re.compile(r"http[s]?:\/\/intellitect\.com")
+RE_LINK_PATTERN = re.compile(LINK_PATTERN)
 
 
 class Linkify:
@@ -68,8 +69,8 @@ class Linkify:
 
     @staticmethod
     def fix_link(link: str, post_id: str) -> Tuple[bool, str]:
-        if INTELLITECT_LINK_PATTERN.match(link):
-            relative_link = re.sub(INTELLITECT_LINK_PATTERN, "", link)
+        if RE_LINK_PATTERN.match(link):
+            relative_link = re.sub(RE_LINK_PATTERN, "", link)
             logger.info(f"post_id={post_id} replacing: {link} -> {relative_link}")
             return True, relative_link
         return False, link
