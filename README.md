@@ -3,6 +3,7 @@
 
 ## Setup dev environment
 
+### Install package dependencies
 `powershell`
 ```powershell
 python -m virtualenv env
@@ -17,6 +18,7 @@ source ./env/Scripts/activate
 pip install -r requirements.txt
 ```
 
+### Setup environment variables
 ```
 cp sample.env .env
 ```
